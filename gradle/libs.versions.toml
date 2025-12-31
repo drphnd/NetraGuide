@@ -9,13 +9,22 @@ lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.9.3"
 composeBom = "2024.11.00"
 camerax = "1.4.0"
-mlkit = "17.0.2"
-tfliteTaskVision = "0.4.4"
+
+tfliteSupport = "0.4.4"
+tfliteMetadata = "0.4.4"
+tfliteGpu = "2.14.0"
 
 [libraries]
-tensorflow-lite-task-vision = { group = "org.tensorflow", name = "tensorflow-lite-task-vision", version.ref = "tfliteTaskVision" }
-tensorflow-lite-gpu = { group = "org.tensorflow", name = "tensorflow-lite-gpu-delegate-plugin", version.ref = "tfliteTaskVision" }
-mlkit-object-detection-custom = { group = "com.google.mlkit", name = "object-detection-custom", version.ref = "mlkit" }
+# --- TensorFlow Lite ---
+tensorflow-lite = { group = "org.tensorflow", name = "tensorflow-lite", version.ref = "tfliteGpu" }
+tensorflow-lite-support = { group = "org.tensorflow", name = "tensorflow-lite-support", version.ref = "tfliteSupport" }
+tensorflow-lite-metadata = { group = "org.tensorflow", name = "tensorflow-lite-metadata", version.ref = "tfliteMetadata" }
+
+# GPU Implementation (Yang sudah ada)
+tensorflow-lite-gpu = { group = "org.tensorflow", name = "tensorflow-lite-gpu", version.ref = "tfliteGpu" }
+# GPU API (YANG BARU - WAJIB DITAMBAHKAN UNTUK FIX ERROR)
+tensorflow-lite-gpu-api = { group = "org.tensorflow", name = "tensorflow-lite-gpu-api", version.ref = "tfliteGpu" }
+# --- Android Core & Testing ---
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
@@ -24,7 +33,7 @@ androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecyc
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 
-# UI (Saya kembalikan ke nama standar agar lebih pendek)
+# --- UI Compose ---
 androidx-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
@@ -33,13 +42,10 @@ androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-man
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 
-# CameraX
+# --- CameraX ---
 androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "camerax" }
 androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
-
-# ML Kit
-mlkit-object-detection = { group = "com.google.mlkit", name = "object-detection", version.ref = "mlkit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

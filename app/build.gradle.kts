@@ -8,6 +8,10 @@ android {
     namespace = "com.example.netraguide"
     compileSdk = 35
 
+    aaptOptions {
+        noCompress += "tflite"
+    }
+
     defaultConfig {
         applicationId = "com.example.netraguide"
         minSdk = 26
@@ -48,8 +52,12 @@ dependencies {
     // Pastikan pakai tanda backtick ` di sekitar kata object
 //    implementation(libs.mlkit.`object`.detection)
 //    implementation(libs.mlkit.`object`.detection.custom)
-    implementation(libs.tensorflow.lite.task.vision)
+    // --- TensorFlow Lite YOLOv8 (BARU) ---
+    implementation(libs.tensorflow.lite)
+    implementation(libs.tensorflow.lite.support)
+    implementation(libs.tensorflow.lite.metadata)
     implementation(libs.tensorflow.lite.gpu)
+    implementation(libs.tensorflow.lite.gpu.api)
 
     // --- Library Standar ---
     implementation(libs.androidx.core.ktx)

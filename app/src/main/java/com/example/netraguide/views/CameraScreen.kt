@@ -1,159 +1,175 @@
-package com.example.netraguide
+package com.example.netraguide.views
 
 import android.content.Context
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.example.netraguide.views.ObjectDetectionAnalyzer
+import androidx.lifecycle.LifecycleOwner
 import java.util.Locale
 import java.util.concurrent.Executors
 
+// Deklarasi Variabel TTS di luar fungsi agar aman
+private var lastSpokenText = ""
+private var lastSpokenTime = 0L
+
 @Composable
-fun CameraPreviewScreen() {
+fun CameraScreen() {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // State untuk teks di layar
-    var detectedObjectText by remember { mutableStateOf("Mencari benda...") }
+    // State Koordinat
+    var detectedObjects by remember { mutableStateOf<List<DetectionResult>>(emptyList()) }
 
-    // --- 1. Persiapan Text-to-Speech (TTS) ---
+    // Setup TTS
     var tts: TextToSpeech? by remember { mutableStateOf(null) }
-
-    // Variabel "Rem" agar tidak spam suara
-    var lastSpokenText by remember { mutableStateOf("") }
-    var lastSpokenTime by remember { mutableLongStateOf(0L) }
-
-    // Inisialisasi TTS saat layar dibuka
-    DisposableEffect(Unit) {
+    LaunchedEffect(Unit) {
         tts = TextToSpeech(context) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                // Set Bahasa ke Indonesia (atau Inggris jika gagal)
-                val result = tts?.setLanguage(Locale("id", "ID"))
-                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    Log.e("NetraGuide", "Bahasa Indonesia tidak didukung, pakai Inggris")
-                    tts?.language = Locale.US
-                }
+            if (status != TextToSpeech.ERROR) {
+                tts?.language = Locale("id", "ID")
             }
         }
-        // Matikan TTS saat keluar aplikasi agar hemat memori
-        onDispose {
-            tts?.stop()
-            tts?.shutdown()
-        }
     }
 
-    // Fungsi Pembantu untuk Bicara
-    fun speakObject(label: String) {
-        val currentTime = System.currentTimeMillis()
-        // Syarat bicara: Benda beda ATAU sudah lebih dari 3 detik
-        if (label != lastSpokenText || (currentTime - lastSpokenTime) > 3000) {
-            tts?.speak(label, TextToSpeech.QUEUE_FLUSH, null, null)
-            lastSpokenText = label
-            lastSpokenTime = currentTime
-        }
-    }
-
-    // --- 2. Tampilan UI ---
     Box(modifier = Modifier.fillMaxSize()) {
-        // Kamera
+        // 1. LAYAR KAMERA (ANTI-LOOPING)
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
-                PreviewView(ctx).apply {
-                    layoutParams = ViewGroup.LayoutParams(
+                // Factory hanya jalan 1 KALI saat aplikasi dibuka
+                val previewView = PreviewView(ctx).apply {
+                    layoutParams = LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
-                    scaleType = PreviewView.ScaleType.FILL_START
+                    scaleType = PreviewView.ScaleType.FILL_CENTER // Ubah ke FILL_CENTER agar rasio pas
                 }
+
+                // Start Kamera di sini (DIJAMIN SEKALI)
+                startCamera(ctx, lifecycleOwner, previewView) { results ->
+                    // Update UI (Garis Merah)
+                    detectedObjects = results
+
+                    // Update Suara
+                    if (results.isNotEmpty()) {
+                        speakObject(tts, results[0].text)
+                    }
+                }
+
+                previewView
             },
-            update = { previewView ->
-                startCamera(context, lifecycleOwner, previewView) { label ->
-                    // Callback saat benda ditemukan:
-                    detectedObjectText = label // 1. Update Teks Layar
-                    speakObject(label)         // 2. Keluarkan Suara
-                }
-            }
+            // Update dikosongkan agar Compose tidak merestart kamera saat garis merah berubah
+            update = { }
         )
 
-        // Overlay Teks (Agar mudah dibaca developer/pengguna awas)
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(32.dp)
-                .background(Color.Black.copy(alpha = 0.6f)) // Background semi-transparan
-                .padding(16.dp)
-        ) {
-            Text(
-                text = detectedObjectText,
-                color = Color.White,
-                fontSize = 24.sp
+        // 2. LAYAR GARIS MERAH
+        DetectionOverlay(detectedObjects)
+    }
+}
+
+@Composable
+fun DetectionOverlay(objects: List<DetectionResult>) {
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val w = size.width
+        val h = size.height
+
+        val paint = android.graphics.Paint().apply {
+            color = android.graphics.Color.WHITE
+            textSize = 50f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setShadowLayer(10f, 0f, 0f, android.graphics.Color.BLACK)
+        }
+
+        objects.forEach { obj ->
+            // Scale dari 0-1 ke Ukuran Layar HP
+            val left = obj.boundingBox.left * w
+            val top = obj.boundingBox.top * h
+            val right = obj.boundingBox.right * w
+            val bottom = obj.boundingBox.bottom * h
+
+            // Gambar Kotak
+            drawRect(
+                color = Color.Red,
+                topLeft = Offset(left, top),
+                size = Size(right - left, bottom - top),
+                style = Stroke(width = 8f)
+            )
+
+            // Gambar Teks
+            drawContext.canvas.nativeCanvas.drawText(
+                obj.text,
+                left,
+                top - 20f,
+                paint
             )
         }
     }
 }
 
-// --- 3. Logika Kamera & Analyzer ---
+// Fungsi Helper untuk start kamera
 private fun startCamera(
     context: Context,
-    lifecycleOwner: androidx.lifecycle.LifecycleOwner,
+    lifecycleOwner: LifecycleOwner,
     previewView: PreviewView,
-    onObjectFound: (String) -> Unit
+    onResult: (List<DetectionResult>) -> Unit
 ) {
     val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
 
     cameraProviderFuture.addListener({
-        val cameraProvider = cameraProviderFuture.get()
-
-        val preview = Preview.Builder().build().also {
-            it.setSurfaceProvider(previewView.surfaceProvider)
-        }
-
-        val imageAnalyzer = ImageAnalysis.Builder()
-            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-            .build()
-            .also {
-                it.setAnalyzer(
-                    Executors.newSingleThreadExecutor(),
-                    // UBAH BARIS INI (Tambahkan context):
-                    ObjectDetectionAnalyzer(context) { label ->
-                        onObjectFound(label)
-                    }
-                )
-            }
-        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
         try {
+            val cameraProvider = cameraProviderFuture.get()
+            val preview = Preview.Builder().build()
+            preview.setSurfaceProvider(previewView.surfaceProvider)
+
+            val imageAnalyzer = ImageAnalysis.Builder()
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build()
+
+            imageAnalyzer.setAnalyzer(Executors.newSingleThreadExecutor(),
+                ObjectDetectionAnalyzer(context, onResult))
+
             cameraProvider.unbindAll()
             cameraProvider.bindToLifecycle(
                 lifecycleOwner,
-                cameraSelector,
+                CameraSelector.DEFAULT_BACK_CAMERA,
                 preview,
                 imageAnalyzer
             )
-        } catch (exc: Exception) {
-            Log.e("NetraGuide", "Gagal bind kamera", exc)
+            Log.d("NetraGuide", "Kamera Start Sukses!")
+        } catch (e: Exception) {
+            Log.e("NetraGuide", "Kamera Error: ${e.message}")
         }
-
     }, ContextCompat.getMainExecutor(context))
+}
+
+// Fungsi Helper TTS
+fun speakObject(tts: TextToSpeech?, text: String) {
+    val currentTime = System.currentTimeMillis()
+    val labelOnly = text.split(" ").firstOrNull() ?: text
+
+    // Jeda 3 detik agar tidak berisik
+    if (labelOnly != lastSpokenText || (currentTime - lastSpokenTime) > 3000) {
+        tts?.speak(labelOnly, TextToSpeech.QUEUE_FLUSH, null, null)
+        lastSpokenText = labelOnly
+        lastSpokenTime = currentTime
+    }
 }
