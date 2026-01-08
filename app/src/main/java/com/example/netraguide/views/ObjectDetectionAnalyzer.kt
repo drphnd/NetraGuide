@@ -30,9 +30,8 @@ class ObjectDetectionAnalyzer(
     private var interpreter: Interpreter? = null
     private var labels = listOf<String>()
 
-    // Setup Model
+    
     private val inputSize = 640
-    // Turunkan threshold ke 40% agar lebih mudah mendeteksi di kondisi cahaya ruangan
     private val confThreshold = 0.40f
 
     private var lastTimeStamp = 0L
