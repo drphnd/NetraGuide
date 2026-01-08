@@ -1,12 +1,11 @@
 **NetraGuide – Aplikasi “Digital Eye” Berbasis AI untuk Tunanetra**
-NetraGuide adalah aplikasi Android berbasis Artificial Intelligence yang dirancang untuk membantu penyandang tunanetra mengenali lingkungan sekitarnya secara mandiri. 
+-> NetraGuide adalah aplikasi Android berbasis Artificial Intelligence yang dirancang untuk membantu penyandang tunanetra mengenali lingkungan sekitarnya secara mandiri. 
 Aplikasi ini bekerja sebagai digital eye dengan memanfaatkan kamera smartphone untuk mendeteksi objek di sekitar pengguna dan mengubah informasi visual tersebut menjadi feedback audio (Text-to-Speech) secara real-time.
 
 **Tujuan utama NetraGuide** 
-Meningkatkan kemandirian, mobilitas, dan keamanan pengguna tunanetra dalam menjalani aktivitas sehari-hari, sekaligus mengatasi keterbatasan alat bantu konvensional (tongkat putih) yang tidak mampu mendeteksi objek melayang atau memberikan informasi jenis objek.
+-> Meningkatkan kemandirian, mobilitas, dan keamanan pengguna tunanetra dalam menjalani aktivitas sehari-hari, sekaligus mengatasi keterbatasan alat bantu konvensional (tongkat putih) yang tidak mampu mendeteksi objek melayang atau memberikan informasi jenis objek.
 
 **Teknologi & Library yang Digunakan**
-NetraGuide dibangun menggunakan teknologi mobile dan machine learning yang dioptimalkan untuk perangkat Android:
 1. Kotlin & Jetpack Compose
    Digunakan sebagai bahasa dan framework utama untuk pengembangan aplikasi Android dan UI pengguna.
 2. TensorFlow Lite (TFLite)
