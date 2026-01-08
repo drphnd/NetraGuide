@@ -41,6 +41,7 @@ class ObjectDetectionAnalyzer(
         setupInterpreter()
     }
 
+    // Mengaktifkan GPU
     private fun setupInterpreter() {
         try {
             labels = getCocoLabels()
