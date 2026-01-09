@@ -32,7 +32,7 @@ class ObjectDetectionAnalyzer(
 
     
     private val inputSize = 640
-    private val confThreshold = 0.40f
+    private val confThreshold = 0.70f
 
     private var lastTimeStamp = 0L
     private val updateInterval = 100L

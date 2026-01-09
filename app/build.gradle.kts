@@ -9,12 +9,14 @@ android {
     compileSdk = 35
 
     aaptOptions {
+        // Penting agar model .tflite tidak dikompres saat build APK
         noCompress += "tflite"
     }
 
     defaultConfig {
         applicationId = "com.example.netraguide"
         minSdk = 26
+        // Disarankan targetSdk disamakan dengan compileSdk
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -31,14 +33,30 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        // Disarankan upgrade ke Java 17 untuk Android Studio terbaru
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
+    }
+    packaging {
+        resources {
+            // Excludes standar untuk library ML yang sering konflik lisensi
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE"
+            excludes += "META-INF/LICENSE.txt"
+            excludes += "META-INF/license.txt"
+            excludes += "META-INF/NOTICE"
+            excludes += "META-INF/NOTICE.txt"
+            excludes += "META-INF/notice.txt"
+            excludes += "META-INF/ASL2.0"
+            excludes += "META-INF/*.kotlin_module"
+        }
     }
 }
 
@@ -48,24 +66,32 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
 
-    // --- ML Kit ---
-    // Pastikan pakai tanda backtick ` di sekitar kata object
-//    implementation(libs.mlkit.`object`.detection)
-//    implementation(libs.mlkit.`object`.detection.custom)
-    // --- TensorFlow Lite YOLOv8 (BARU) ---
-    implementation(libs.tensorflow.lite)
-    implementation(libs.tensorflow.lite.support)
-    implementation(libs.tensorflow.lite.metadata)
-    implementation(libs.tensorflow.lite.gpu)
-    implementation(libs.tensorflow.lite.gpu.api)
+    // --- TensorFlow Lite & GPU Delegate (Standar untuk YOLOv8) ---
+    // Saya menggunakan versi hardcoded di sini untuk memastikan kompatibilitas
+    // jika Anda belum mengatur libs.versions.toml dengan benar.
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
 
-    // --- Library Standar ---
+    // --- GPU DELEGATE (Perbaikan disini) ---
+    // 1. Library Implementasi (Native Code)
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0")
+
+    // 2. Library API (Wajib ditambahkan agar kelas 'Options' terbaca)
+    implementation("org.tensorflow:tensorflow-lite-gpu-api:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0") // GPU Delegate
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4") // ImageProcessor
+
+    // Jika ingin menggunakan metadata (opsional untuk YOLO, tapi bagus ada)
+    implementation("org.tensorflow:tensorflow-lite-metadata:0.4.4")
+
+    // --- Library Standar Android ---
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
 
-    // --- UI (COCOK dengan TOML Anda: libs.androidx.ui) ---
+    // --- UI (Compose & Material3) ---
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)

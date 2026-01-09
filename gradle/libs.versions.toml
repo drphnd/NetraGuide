@@ -13,6 +13,7 @@ camerax = "1.4.0"
 tfliteSupport = "0.4.4"
 tfliteMetadata = "0.4.4"
 tfliteGpu = "2.14.0"
+litertGpu = "1.4.1"
 
 [libraries]
 # --- TensorFlow Lite ---
@@ -46,6 +47,7 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "camerax" }
 androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
+litert-gpu = { group = "com.google.ai.edge.litert", name = "litert-gpu", version.ref = "litertGpu" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
